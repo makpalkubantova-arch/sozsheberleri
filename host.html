@@ -611,8 +611,14 @@ mark sup { font-size: .62em; font-weight: 900; margin-left: 2px; text-decoration
 <script src="core.js"></script>
 <script src="ws-data.js"></script>
 <script>
-window.addEventListener('error', (e) => { const a = document.getElementById('app'); if (a && /Жүктелуде|Байланыс|дайындалуда/.test(a.textContent) && !a.querySelector('.stepper')) a.innerHTML = '<div class="glass" style="padding:20px"><h2>Қате шықты</h2><p class="muted">' + String(e.message).replace(/</g,'&lt;') + '</p><button class="gloss" onclick="location.reload()">Қайта жүктеу</button></div>'; });
-window.addEventListener('unhandledrejection', (e) => { const a = document.getElementById('app'); if (a && /Жүктелуде|Байланыс|дайындалуда/.test(a.textContent) && !a.querySelector('.stepper')) a.innerHTML = '<div class="glass" style="padding:20px"><h2>Қате шықты</h2><p class="muted">' + String(e.reason && e.reason.message || e.reason).replace(/</g,'&lt;') + '</p><button class="gloss" onclick="location.reload()">Қайта жүктеу</button></div>'; });
+/* Жүктелу кезіндегі қателер: сыртқы (CDN) скрипттің «Script error.» хабарын елемейміз; өз қатеміз болса және 30 секундтан кейін де тақта ашылмаса ғана көрсетеміз */
+(function () {
+  let last = null;
+  const busy = () => { const a = document.getElementById('app'); return a && !a.querySelector('.stepper') && /Жүктелуде|Байланыс|дайындалуда/.test(a.textContent); };
+  window.addEventListener('error', (e) => { if (!e || !e.message || /^Script error/i.test(e.message) || (e.filename && e.filename.indexOf(location.origin) !== 0)) return; last = e.message; });
+  window.addEventListener('unhandledrejection', (e) => { last = String((e.reason && e.reason.message) || e.reason || ''); });
+  setTimeout(() => { if (!busy()) return; const a = document.getElementById('app'); a.innerHTML = '<div class="glass" style="padding:20px"><h2>Тақта ашылмады</h2><p class="muted">' + String(last || 'Интернет баяу немесе бөгелген').replace(/</g, '&lt;') + '</p><button class="gloss" onclick="location.reload()">Қайта жүктеу</button></div>'; }, 40000);
+})();
 (async function () {
   const Q = ECO.QUESTIONS, T = ECO.TEAMS, L = ECO.LETTERS, esc = ECO.esc;
   const app = document.getElementById('app');
