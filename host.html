@@ -649,10 +649,10 @@ mark sup { font-size: .62em; font-weight: 900; margin-left: 2px; text-decoration
   /* ойын коды */
   const params = new URLSearchParams(location.search);
   let code = params.get('code');
-  try { if (!code) code = localStorage.getItem('qaz3live_host_code'); } catch (e) {}
+  try { if (!code) code = localStorage.getItem('sozsh_host_code'); } catch (e) {}
   const newCode = () => String(Math.floor(1000 + Math.random() * 9000));
   if (!code) code = newCode();
-  try { localStorage.setItem('qaz3live_host_code', code); } catch (e) {}
+  try { localStorage.setItem('sozsh_host_code', code); } catch (e) {}
   let be;
   const G = 'games/' + code;
   let capsule = null; try { capsule = JSON.parse(localStorage.getItem('qaz3_teams_v1') || 'null'); } catch (e) {}
@@ -663,7 +663,7 @@ mark sup { font-size: .62em; font-weight: 900; margin-left: 2px; text-decoration
   async function prep(b) {
     const existing = await tmo(b.get(G + '/meta'), 7000, 'meta оқу');
     if (existing && typeof existing.created === 'number' && b.now() - existing.created > 3 * 3600000 && (existing.host === b.uid || b.demo)) {
-      try { localStorage.removeItem('qaz3live_host_code'); localStorage.removeItem('qaz3live_p2p_' + code); } catch (e) {}
+      try { localStorage.removeItem('sozsh_host_code'); localStorage.removeItem('qaz3live_p2p_' + code); } catch (e) {}
       return 'reload';
     }
     if (!existing) await tmo(b.set(G + '/meta', { host: b.uid, phase: 'slide', stage: 0, stageTitle: 'Сәлемдесу', stageNote: 'Телефоныңды дайында. Келесі кезеңде QR-код шығады.', stageStart: b.TS, lsAcc: 0, lsRun: null, stAcc: 0, stRun: null, q: -1, created: b.TS, teamNames }), 7000, 'meta жазу');
@@ -682,12 +682,12 @@ mark sup { font-size: .62em; font-weight: 900; margin-left: 2px; text-decoration
     say('Сабақ дайындалуда…');
     res = await prep(be);
   } catch (e) {
-    if (e && e.code === 'busy') { try { localStorage.removeItem('qaz3live_host_code'); } catch (x) {} location.replace('host.html'); return; }
+    if (e && e.code === 'busy') { try { localStorage.removeItem('sozsh_host_code'); } catch (x) {} location.replace('host.html'); return; }
     try { console.warn('Онлайн байланыс болмады, тақта режимі:', e && e.message); } catch (x) {}
     be = null;
   }
   if (res === 'reload') { location.replace('host.html'); return; }
-  if (res === 'busy') { app.innerHTML = '<div class="glass" style="padding:20px"><h2>Бұл код бос емес</h2><p class="muted">Басқа құрылғыда осы кодпен ойын ашылған.</p><button class="gloss" id="nw">Жаңа ойын ашу</button></div>'; $('nw').onclick = () => { try { localStorage.removeItem('qaz3live_host_code'); } catch (e) {} location.href = 'host.html'; }; return; }
+  if (res === 'busy') { app.innerHTML = '<div class="glass" style="padding:20px"><h2>Бұл код бос емес</h2><p class="muted">Басқа құрылғыда осы кодпен ойын ашылған.</p><button class="gloss" id="nw">Жаңа ойын ашу</button></div>'; $('nw').onclick = () => { try { localStorage.removeItem('sozsh_host_code'); } catch (e) {} location.href = 'host.html'; }; return; }
   if (!be) {
     /* интернет/сервер жауап бермесе — сабақ тақтада бәрібір жүреді (топтар тақтадағы панельден жауап береді) */
     be = await ECO.local(); try { be.kind = 'local'; } catch (x) {}
@@ -1333,7 +1333,7 @@ mark sup { font-size: .62em; font-weight: 900; margin-left: 2px; text-decoration
       if (a === 'tm') { lsReset(); close(); }
       if (a === 'xl') downloadExcel(b);
       if (a === 'qr') { close(); showQR(); }
-      if (a === 'nw') { try { localStorage.removeItem('qaz3live_host_code'); } catch (e) {} location.href = 'host.html'; }
+      if (a === 'nw') { try { localStorage.removeItem('sozsh_host_code'); } catch (e) {} location.href = 'host.html'; }
       if (a === 'wipe') wipeAll(b); });
   }
   document.addEventListener('click', (e) => { const t = e.target.closest && e.target.closest('[data-tool]'); if (t) openTool(t.dataset.tool); });
@@ -1362,7 +1362,7 @@ mark sup { font-size: .62em; font-weight: 900; margin-left: 2px; text-decoration
     makeQR($('qr'), 512);
     bindChips();
     $('go').onclick = () => { if (curStage() >= 0) return goStage(curStage() + 1); if (!Object.keys(game.players || {}).length) return; startQ(0); };
-    $('nw').onclick = () => { try { localStorage.removeItem('qaz3live_host_code'); } catch (e) {} location.href = 'host.html'; };
+    $('nw').onclick = () => { try { localStorage.removeItem('sozsh_host_code'); } catch (e) {} location.href = 'host.html'; };
     $('fs').onclick = () => { try { const r = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); if (r && r.catch) r.catch(() => {}); } catch (e) {} };
   }
   function bindChips() { app.querySelectorAll('[data-u]').forEach((b) => b.onclick = () => { const u = b.dataset.u; const t = (game.teams || {})[u]; const upd = {}; upd[u] = ((t >= 0 ? t : 0) + 1) % 3; be.update(G + '/teams', upd); }); }
@@ -1587,7 +1587,7 @@ mark sup { font-size: .62em; font-weight: 900; margin-left: 2px; text-decoration
     $('csv').onclick = () => { const tsv = ['№\tОқушы\tТоп\tДұрыс\tБарлығы\tОрт. уақыт (с)\tҰпай\tДеңгей'].concat(res.rows.map((r) => [r.rank, r.name, r.team !== undefined ? ((game.meta.teamNames || teamNames)[r.team]) : '', r.correct, r.total, r.correct ? r.time.toFixed(1) : '', r.score, ECO.level(r)[0]].join('\t'))).join('\n');
       const fbk = () => { const rg = document.createRange(); rg.selectNodeContents(app.querySelector('.tbl')); const s = getSelection(); s.removeAllRanges(); s.addRange(rg); $('cpn').textContent = 'Кесте белгіленді, Ctrl+C басыңыз.'; };
       try { navigator.clipboard.writeText(tsv).then(() => { $('cpn').textContent = 'Көшірілді! Excel-ге қойыңыз.'; }, fbk); } catch (e) { fbk(); } };
-    $('nw').onclick = () => { try { localStorage.removeItem('qaz3live_host_code'); } catch (e) {} location.href = 'host.html'; };
+    $('nw').onclick = () => { try { localStorage.removeItem('sozsh_host_code'); } catch (e) {} location.href = 'host.html'; };
     $('xl').onclick = () => downloadExcel($('xl')); $('wipe').onclick = () => wipeAll($('wipe'));
   }
 
@@ -1602,6 +1602,8 @@ mark sup { font-size: .62em; font-weight: 900; margin-left: 2px; text-decoration
       [0, 1, 2].forEach((t) => { game.players['team' + t] = { name: (tn[t] || T[t].name) + ' тобы', board: 1 }; game.teams['team' + t] = t; });
       Object.keys(ta).forEach((qi) => { game.answers[qi] = Object.assign({}, game.answers[qi], ta[qi]); });
       const bf = m.bfb || {}; if (Object.keys(bf).length) { game.feedback = Object.assign({}, game.feedback); Object.keys(bf).forEach((k) => { game.feedback['b' + k] = bf[k]; }); } }
+    /* ескі/басқа нұсқадан қалған жазба: сұрақ нөмірі жарамсыз болса, сұрақ режимінен шығамыз */
+    if ((m.phase === 'question' || m.phase === 'reveal') && !Q[m.q]) { m.phase = 'slide'; m.q = -1; if (m.host === be.uid || be.demo) { try { be.update(G + '/meta', { phase: 'slide', q: -1 }); } catch (e) {} } }
     const key = m.phase + ':' + m.q + ':' + (m.starts && typeof m.starts[m.q] === 'number' ? 1 : 0) + ':' + m.stage;
     if (key !== mounted) {
       mounted = key;
