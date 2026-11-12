@@ -118,6 +118,7 @@ function station(s) {
   <div class="cols" style="--c:${s.c};--s:${s.soft}">
     <div class="col">
       <div class="card goal"><h3>🎯 Наша цель</h3><p>${esc(s.goal)}</p></div>
+      ${window.ILLUS && ILLUS[s.id] ? `<div class="card build"><div class="bh"><h3>🛠️ Как собрать: образец</h3><button class="btn big" id="buildGo">▶ Показать сборку</button></div><div class="ill-wrap" id="ill">${ILLUS[s.id]}</div><p class="hint" id="buildCap">Так выглядит готовое изделие. Нажми «Показать сборку» или на любой шаг ниже.</p></div>` : ""}
       <div class="card"><h3>🧰 Нам понадобится</h3><ul class="mat">${s.mat.map(m => `<li>${esc(m)}</li>`).join("")}</ul></div>
       <div class="card"><h3>👣 Шаги</h3><ol class="steps">${s.steps.map((t, i) => `<li data-i="${i}" class="${done.includes(i) ? "ok" : ""}"><span>${i + 1}</span><p>${esc(t)}</p></li>`).join("")}</ol></div>
       <div class="card safe"><h3>⚠️ Безопасность</h3><p>${esc(s.safe)}</p></div>
@@ -130,7 +131,12 @@ function station(s) {
     </div>
   </div>
   <nav class="snav">${idx > 0 ? `<a href="#st/${D.stations[idx - 1].id}">← ${esc(D.stations[idx - 1].title)}</a>` : `<a href="#home">← Все станции</a>`}${idx < D.stations.length - 1 ? `<a href="#st/${D.stations[idx + 1].id}">${esc(D.stations[idx + 1].title)} →</a>` : `<a href="#home">Все станции →</a>`}</nav>`;
-  $$(".steps li").forEach(li => li.onclick = () => { const i = +li.dataset.i, d = LS.get("done_" + s.id, []); const k = d.indexOf(i); k < 0 ? d.push(i) : d.splice(k, 1); LS.set("done_" + s.id, d); li.classList.toggle("ok"); });
+  const showUpTo = n => { $$("#ill .ly").forEach(g => { const k = +g.dataset.s; g.classList.toggle("off", n > 0 && k > n); g.classList.toggle("cur", k === n); });
+    $$(".steps li").forEach((li, i) => li.classList.toggle("now", i + 1 === n)); if (n > 0 && $("#buildCap")) $("#buildCap").textContent = `Шаг ${n}: ${s.steps[n - 1]}`; };
+  let bt = null; $("#buildGo") && ($("#buildGo").onclick = () => { clearInterval(bt); let n = 1; showUpTo(n); tone(660, .12, "sine", .08);
+    bt = setInterval(() => { n++; if (n > s.steps.length) { clearInterval(bt); showUpTo(0); $("#buildCap").textContent = "✅ Готово! Теперь соберите сами — шаг за шагом."; return; } showUpTo(n); tone(660 + n * 60, .12, "sine", .08); }, 1800); ANIMS.push({ cancel: () => clearInterval(bt) }); });
+  $$(".steps li").forEach(li => li.addEventListener("mouseenter", () => {}));
+  $$(".steps li").forEach(li => li.onclick = () => { showUpTo(+li.dataset.i + 1); const i = +li.dataset.i, d = LS.get("done_" + s.id, []); const k = d.indexOf(i); k < 0 ? d.push(i) : d.splice(k, 1); LS.set("done_" + s.id, d); li.classList.toggle("ok"); });
   $$(".rt").forEach(r => $$("button", r).forEach(b => b.onclick = () => { const t = +r.dataset.t, n = +b.dataset.n, cur = getStar(t, s.id); setStar(t, s.id, cur === n ? n - 1 : n); $$("button", r).forEach(x => x.classList.toggle("on", +x.dataset.n <= getStar(t, s.id))); if (getStar(t, s.id) === 3) beep(1); }));
   ({ tuner, bridge, chroma, blocks, gallery })[s.w]($("#wbox"), s);
 }

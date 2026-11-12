@@ -131,3 +131,12 @@ main{max-width:1500px;margin:0 auto;padding:22px}
 @media (max-width:1100px){.grid5{grid-template-columns:repeat(2,1fr)}.cols{grid-template-columns:1fr}.lv{grid-template-columns:1fr}}
 @media (max-width:640px){body{font-size:16px}main{padding:12px}.hero{padding:18px}.hero h1{font-size:30px}.grid5{grid-template-columns:1fr}.shead{padding:14px}.shead .ico{font-size:44px}.shead h1{font-size:26px}.shead .q{font-size:16px}
  .brand small{display:none}.team{grid-template-columns:30px 110px 1fr 54px}.brow{grid-template-columns:110px 1fr 36px}.pal{grid-template-columns:repeat(3,1fr)}.lab{grid-template-columns:90px 1fr}.coin b{font-size:56px}}
+
+/* образец сборки */
+.build .bh{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}.build .bh h3{margin:0}.build .btn.big{background:var(--c);font-size:15px;padding:8px 14px}
+.ill-wrap{background:linear-gradient(#FFFDF8,var(--s));border-radius:16px;padding:6px}.ill{width:100%;height:auto;display:block;font-family:var(--f)}
+.ill .lb{font-size:13px;font-weight:800;fill:#14213D}
+.ill .ly{transition:opacity .5s,transform .5s;transform-box:fill-box}.ill .ly.off{opacity:.07}.ill .ly.cur{animation:popin .7s ease-out}
+@keyframes popin{0%{opacity:0;transform:translateY(-14px) scale(.92)}60%{opacity:1;transform:translateY(2px) scale(1.03)}100%{transform:none}}
+.ill .wave{animation:wv 1.2s ease-in-out infinite alternate}@keyframes wv{to{transform:translateY(-6px)}}
+.steps li.now{background:var(--s);box-shadow:0 0 0 3px var(--c) inset}
