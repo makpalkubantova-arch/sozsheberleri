@@ -16,8 +16,8 @@ const CL = (() => {
   const r = async (p, m = "GET", b) => { if (!ok) throw 0; const x = await fetch(`${url}/${room}/${p}.json`, { method: m, headers: { "Content-Type": "application/json" }, body: b == null ? undefined : JSON.stringify(b) }); if (!x.ok) throw 0; return x.json(); };
   return { ok, get: p => r(p), put: (p, v) => r(p, "PUT", v), post: (p, v) => r(p, "POST", v), del: p => r(p, "DELETE") };
 })();
-let CLOUD = { stars: {}, bridge: {}, votes: {}, proj: {}, reflect: {} };
-async function pull() { try { const d = await CL.get(""); CLOUD = Object.assign({ stars: {}, bridge: {}, votes: {}, proj: {}, reflect: {} }, d || {}); refreshLive(); } catch {} }
+let CLOUD = { stars: {}, bridge: {}, votes: {}, proj: {}, reflect: {}, why: {}, pass: {} };
+async function pull() { try { const d = await CL.get(""); CLOUD = Object.assign({ stars: {}, bridge: {}, votes: {}, proj: {}, reflect: {}, why: {}, pass: {} }, d || {}); refreshLive(); } catch {} }
 /* QR с дизайном: цветные круглые точки, скруглённые «глазки», градиент и значок в центре */
 let QRN = 0;
 const qrSvg = (text, o = {}) => { if (typeof o === "string") o = { c1: o };
@@ -102,32 +102,39 @@ function home() {
     ${MODE === "board" ? `<div class="heroqr">${qrSvg(stuUrl())}<small>Сканируй — станция на телефоне</small></div>` : ""}</section>
     <section class="grid5">${D.stations.map((s, i) => `<a class="scard" href="#st/${s.id}" style="--c:${s.c};--s:${s.soft}">
       <span class="num">${i + 1}</span><span class="ico">${s.i}</span><b>${esc(s.title)}</b><small>${esc(s.q)}</small></a>`).join("")}</section>
+    <section class="model"><h2>Пять шагов изобретателя</h2><div class="msteps">${D.model.map((m, i) => `<div class="ms"><span class="mi">${m.i}</span><b>${i + 1}. ${m.n}</b><small>${m.stem}</small><p>${esc(m.d)}</p></div>`).join("")}</div></section>
+    <section class="why"><h2>📦 Коробка «Почему?»</h2>${MODE === "stu" ? `<div class="wform"><input id="whyIn" maxlength="140" placeholder="Почему…?"><button class="btn big" id="whyGo">Опустить в коробку</button></div><p class="mut" id="whyMsg">Задай свой вопрос — самый интересный станет темой следующего занятия!</p>` : `<p class="mut">Ученики опускают вопросы с телефона. Самый интересный станет феноменом следующего занятия.</p><div class="wlist" id="whyList"></div>`}</section>
     ${MODE === "board" ? `<section class="board-teams"><h2>⭐ Звёзды команд</h2><div class="teams" id="teamsBox"></div></section>` : `<section class="stu-ref"><h2>Как прошло занятие?</h2><div class="refl">${D.reflect.map((r, i) => `<button data-r="${i}">${r}</button>`).join("")}</div></section>`}`;
-  if (MODE === "board") drawTeams();
+  if (MODE === "board") { drawTeams(); drawWhy(); }
+  $("#whyGo") && ($("#whyGo").onclick = () => { const v = $("#whyIn").value.trim(); if (v.length < 4) return; const q = /^почему/i.test(v) ? v : "Почему " + v;
+    CL.post("why", { q, t: LS.get("team", 0), ts: Date.now() }).then(() => { $("#whyIn").value = ""; $("#whyMsg").textContent = "✅ Вопрос в коробке! Можно задать ещё один."; beep(1); }).catch(() => { $("#whyMsg").textContent = "Нет интернета — попробуй ещё раз."; }); });
   $$(".refl button").forEach(b => b.onclick = () => { const t = LS.get("team", 0); CL.post("reflect", { r: +b.dataset.r, t, ts: Date.now() }).catch(() => {}); LS.set("refl", +b.dataset.r); $$(".refl button").forEach(x => x.classList.toggle("on", x === b)); });
   const rv = LS.get("refl", null); if (rv != null) $$(".refl button")[rv]?.classList.add("on");
 }
+function drawWhy() { const b = $("#whyList"); if (!b) return; const a = Object.values(CLOUD.why || {}).sort((x, y) => y.ts - x.ts).slice(0, 12);
+  b.innerHTML = a.length ? a.map(w => `<span class="wq" style="--c:${(D.teams[w.t] || D.teams[0]).c}">${(D.teams[w.t] || D.teams[0]).i} ${esc(w.q)}</span>`).join("") : `<span class="mut">Пока пусто — ждём первые вопросы…</span>`; }
 function drawTeams() { const b = $("#teamsBox"); if (!b) return; const mx = Math.max(1, ...D.teams.map((_, i) => starsOf(i)));
   b.innerHTML = D.teams.map((t, i) => `<div class="team" style="--c:${t.c}"><span class="ti">${t.i}</span><b>${esc(t.n)}</b><div class="bar"><i style="width:${starsOf(i) / mx * 100}%"></i></div><span class="sc">${starsOf(i)} ⭐</span></div>`).join(""); }
-function refreshLive() { drawTeams(); drawBridgeBoard(); drawGallery(); drawRefl(); }
+function refreshLive() { drawTeams(); drawBridgeBoard(); drawGallery(); drawRefl(); drawWhy(); }
 
 /* ---------- станция ---------- */
 function station(s) {
   const v = $("#view"), idx = D.stations.indexOf(s), done = LS.get("done_" + s.id, []);
   v.innerHTML = `<section class="shead" style="--c:${s.c};--s:${s.soft}"><span class="ico">${s.i}</span><div><small>Станция ${idx + 1}</small><h1>${esc(s.title)}</h1><p class="q">❓ ${esc(s.q)}</p></div>${MODE === "board" ? `<div class="sqr">${qrSvg(stuUrl() + "#st/" + s.id, { c1: s.c, c2: "#14213D", eye: s.c, logo: s.i })}<small>станция на телефоне</small></div>` : ""}</section>
+  <div class="mstrip" style="--c:${s.c};--s:${s.soft}">${D.model.map((m, i) => `<a href="#" data-go="${m.k}"><span>${m.i}</span><b>${i + 1}. ${m.n}</b></a>`).join("<i>→</i>")}</div>
   <div class="cols" style="--c:${s.c};--s:${s.soft}">
     <div class="col">
-      <div class="card goal"><h3>🎯 Наша цель</h3><p>${esc(s.goal)}</p></div>
-      ${window.ILLUS && ILLUS[s.id] ? `<div class="card build"><div class="bh"><h3>🛠️ Как собрать: образец</h3><button class="btn big" id="buildGo">▶ Показать сборку</button></div><div class="ill-wrap" id="ill">${ILLUS[s.id]}</div><p class="hint" id="buildCap">Так выглядит готовое изделие. Нажми «Показать сборку» или на любой шаг ниже.</p></div>` : ""}
+      <div class="card goal" data-k="wonder"><h3>🎯 Наша цель</h3><p>${esc(s.goal)}</p></div>
+      ${window.ILLUS && ILLUS[s.id] ? `<div class="card build" data-k="build"><div class="bh"><h3>🛠️ Как собрать: образец</h3><button class="btn big" id="buildGo">▶ Показать сборку</button></div><div class="ill-wrap" id="ill">${ILLUS[s.id]}</div><p class="hint" id="buildCap">Так выглядит готовое изделие. Нажми «Показать сборку» или на любой шаг ниже.</p></div>` : ""}
       <div class="card"><h3>🧰 Нам понадобится</h3><ul class="mat">${s.mat.map(m => `<li>${esc(m)}</li>`).join("")}</ul></div>
       <div class="card"><h3>👣 Шаги</h3><ol class="steps">${s.steps.map((t, i) => `<li data-i="${i}" class="${done.includes(i) ? "ok" : ""}"><span>${i + 1}</span><p>${esc(t)}</p></li>`).join("")}</ol></div>
       <div class="card safe"><h3>⚠️ Безопасность</h3><p>${esc(s.safe)}</p></div>
     </div>
     <div class="col">
-      <div class="card widget" id="wbox"></div>
-      <details class="card sci"><summary>🔬 Почему так? (наука)</summary><p>${esc(s.sci)}</p></details>
-      <div class="card chal"><h3>🏆 Задание со звёздочкой</h3><p>${esc(s.chal)}</p></div>
-      <div class="card rate"><h3>⭐ Звёзды станции</h3><ol class="crit">${s.stars.map(t => `<li>⭐ ${esc(t)}</li>`).join("")}</ol>${MODE === "board" ? `<div class="rteams">${D.teams.map((t, i) => `<div class="rt" data-t="${i}" style="--tc:${t.c}"><span>${t.i} ${esc(t.n)}</span><span class="st">${[1, 2, 3].map(n => `<button data-n="${n}" class="${getStar(i, s.id) >= n ? "on" : ""}">★</button>`).join("")}</span></div>`).join("")}</div>` : ""}</div>
+      <div class="card widget" id="wbox" data-k="explore"></div>
+      <details class="card sci" data-k="explore"><summary>🔬 Почему так? (наука)</summary><p>${esc(s.sci)}</p></details>
+      <div class="card chal" data-k="improve"><h3>🔧 Улучшаю: задание со звёздочкой</h3><p>${esc(s.chal)}</p><p class="mut">Испытайте, найдите слабое место и запишите в «Паспорт изобретения»: <b>что мы узнали из поломки?</b></p></div>
+      <div class="card rate" data-k="show"><h3>⭐ Звёзды станции</h3><ol class="crit">${s.stars.map(t => `<li>⭐ ${esc(t)}</li>`).join("")}</ol>${MODE === "board" ? `<div class="rteams">${D.teams.map((t, i) => `<div class="rt" data-t="${i}" style="--tc:${t.c}"><span>${t.i} ${esc(t.n)}</span><span class="st">${[1, 2, 3].map(n => `<button data-n="${n}" class="${getStar(i, s.id) >= n ? "on" : ""}">★</button>`).join("")}</span></div>`).join("")}</div>` : ""}</div>
     </div>
   </div>
   <nav class="snav">${idx > 0 ? `<a href="#st/${D.stations[idx - 1].id}">← ${esc(D.stations[idx - 1].title)}</a>` : `<a href="#home">← Все станции</a>`}${idx < D.stations.length - 1 ? `<a href="#st/${D.stations[idx + 1].id}">${esc(D.stations[idx + 1].title)} →</a>` : `<a href="#home">Все станции →</a>`}</nav>`;
@@ -135,7 +142,7 @@ function station(s) {
     $$(".steps li").forEach((li, i) => li.classList.toggle("now", i + 1 === n)); if (n > 0 && $("#buildCap")) $("#buildCap").textContent = `Шаг ${n}: ${s.steps[n - 1]}`; };
   let bt = null; $("#buildGo") && ($("#buildGo").onclick = () => { clearInterval(bt); let n = 1; showUpTo(n); tone(660, .12, "sine", .08);
     bt = setInterval(() => { n++; if (n > s.steps.length) { clearInterval(bt); showUpTo(0); $("#buildCap").textContent = "✅ Готово! Теперь соберите сами — шаг за шагом."; return; } showUpTo(n); tone(660 + n * 60, .12, "sine", .08); }, 1800); ANIMS.push({ cancel: () => clearInterval(bt) }); });
-  $$(".steps li").forEach(li => li.addEventListener("mouseenter", () => {}));
+  $$(".mstrip a").forEach(a => a.onclick = e => { e.preventDefault(); const el = $(`.cols [data-k="${a.dataset.go}"]`); if (el) { if (el.tagName === "DETAILS") el.open = true; el.scrollIntoView({ behavior: "smooth", block: "center" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1200); } });
   $$(".steps li").forEach(li => li.onclick = () => { showUpTo(+li.dataset.i + 1); const i = +li.dataset.i, d = LS.get("done_" + s.id, []); const k = d.indexOf(i); k < 0 ? d.push(i) : d.splice(k, 1); LS.set("done_" + s.id, d); li.classList.toggle("ok"); });
   $$(".rt").forEach(r => $$("button", r).forEach(b => b.onclick = () => { const t = +r.dataset.t, n = +b.dataset.n, cur = getStar(t, s.id); setStar(t, s.id, cur === n ? n - 1 : n); $$("button", r).forEach(x => x.classList.toggle("on", +x.dataset.n <= getStar(t, s.id))); if (getStar(t, s.id) === 3) beep(1); }));
   ({ tuner, bridge, chroma, blocks, gallery })[s.w]($("#wbox"), s);
@@ -267,8 +274,21 @@ function blocks(box) {
 
 /* ---------- 5. галерея ---------- */
 const projOf = t => Object.assign({ title: "", text: "" }, LS.get("proj", {})[t] || {}, (CLOUD.proj || {})[t] || {});
+const passOf = t => Object.assign({}, LS.get("pass", {})[t] || {}, (CLOUD.pass || {})[t] || {});
+const passHtml = p => D.passport.filter(([k]) => p[k]).map(([k, n]) => `<div class="pp"><b>${n}</b><p>${esc(p[k])}</p></div>`).join("");
+function passport(box) {
+  const t = LS.get("team", 0), p = passOf(t);
+  box.innerHTML = `<h3>📘 Паспорт изобретения · ${D.teams[t].i} ${esc(D.teams[t].n)}</h3><p class="mut">Заполните вместе. Гости увидят паспорт, когда отсканируют ваш QR в галерее.</p>
+    <label class="pf"><b>Название изобретения</b><input data-k="title" value="${esc(projOf(t).title)}" placeholder="Например: «Супер-домбра»"></label>
+    ${D.passport.map(([k, n, ph]) => `<label class="pf"><b>${n}</b><textarea data-k="${k}" rows="2" placeholder="${esc(ph)}">${esc(p[k] || "")}</textarea></label>`).join("")}
+    <button class="btn big wide" id="passSave">💾 Сохранить паспорт</button><p class="mut" id="passMsg"></p>`;
+  $("#passSave").onclick = () => { const np = {}; $$("textarea[data-k]", box).forEach(x => np[x.dataset.k] = x.value.trim()); const title = $("input[data-k=title]", box).value.trim();
+    const allP = LS.get("pass", {}); allP[t] = np; LS.set("pass", allP); const pr = LS.get("proj", {}); pr[t] = Object.assign(projOf(t), { title: title || projOf(t).title, text: np.problem || projOf(t).text }); LS.set("proj", pr);
+    Promise.all([CL.put(`pass/${t}`, np), CL.put(`proj/${t}`, pr[t])]).then(() => { $("#passMsg").textContent = "✅ Сохранено! Паспорт виден в галерее."; beep(1); }).catch(() => { $("#passMsg").textContent = "Сохранено на телефоне. Нет интернета — нажми ещё раз позже."; }); };
+}
 const votesOf = t => { const v = (CLOUD.votes || {})[t] || {}; const a = Object.values(v); return { n: a.length, s: a.reduce((x, y) => x + (+y.s || 0), 0) }; };
 function gallery(box) {
+  if (MODE === "stu") return passport(box);
   box.innerHTML = `<h3>🖼️ Выставка: QR-карточки команд</h3>${MODE === "board" ? `<p class="mut">Впишите название проекта и одно предложение. Гости сканируют QR и ставят ⭐.</p>` : `<p class="mut">Попроси учителя вписать название вашего проекта на доске.</p>`}
     <div class="gal" id="gal"></div>${MODE === "board" ? `<button class="btn wide" id="gPrint">🖨️ Распечатать QR-карточки</button>` : ""}`;
   drawGallery();
@@ -277,7 +297,8 @@ function gallery(box) {
 function drawGallery() { const g = $("#gal"); if (!g || g.contains(document.activeElement) && document.activeElement.tagName === "INPUT") return;
   g.innerHTML = D.teams.map((t, i) => { const p = projOf(i), v = votesOf(i); return `<div class="gcard" style="--c:${t.c}"><div class="gh">${t.i} ${esc(t.n)}</div>
     ${MODE === "board" ? `<input data-t="${i}" data-f="title" placeholder="Название проекта" value="${esc(p.title)}"><input data-t="${i}" data-f="text" placeholder="1 предложение: что это и как работает" value="${esc(p.text)}">` : `<b>${esc(p.title || "—")}</b><p>${esc(p.text)}</p>`}
-    <div class="gq">${qrSvg(projUrl(i), { c1: t.c, c2: "#14213D", eye: t.c, logo: t.i })}</div><div class="gv">⭐ ${v.s} <small>(${v.n} гостей)</small></div></div>`; }).join("");
+    <div class="gq">${qrSvg(projUrl(i), { c1: t.c, c2: "#14213D", eye: t.c, logo: t.i })}</div><div class="gv">⭐ ${v.s} <small>(${v.n} гостей)</small></div>${Object.keys(passOf(i)).length ? `<button class="btn" data-pass="${i}">📘 Паспорт</button>` : ""}</div>`; }).join("");
+  $$("[data-pass]", g).forEach(b => b.onclick = () => { const i = +b.dataset.pass; modal(`<h2>📘 ${D.teams[i].i} ${esc(D.teams[i].n)}: ${esc(projOf(i).title || "Паспорт изобретения")}</h2><div class="ppw">${passHtml(passOf(i))}</div>`); });
   $$(".gcard input", g).forEach(inp => inp.onchange = () => { const t = +inp.dataset.t, all = LS.get("proj", {}); all[t] = Object.assign(projOf(t), { [inp.dataset.f]: inp.value }); LS.set("proj", all);
     CLOUD.proj = CLOUD.proj || {}; CLOUD.proj[t] = all[t]; CL.put(`proj/${t}`, all[t]).catch(() => {}); });
 }
@@ -290,20 +311,24 @@ function teacher() {
     <div class="card"><h3>⏱ Ход занятия</h3><table class="plan">${D.plan.map(r => `<tr><td>${r[0]}</td><td>${esc(r[1])}</td></tr>`).join("")}</table></div>
     <div class="card"><h3>🎯 Цели</h3><ul>${D.goals.map(g => `<li>${esc(g)}</li>`).join("")}</ul></div>
     <div class="card"><h3>💛 Ценности</h3><p>${esc(D.values)}</p></div>
+    <div class="card"><h3>🧭 Модель «STEM-феномен: от явления к изобретению»</h3><table class="plan">${D.model.map((m, i) => `<tr><td>${m.i} ${i + 1}. ${m.n}</td><td><b>${m.stem}</b> — ${esc(m.d)}</td></tr>`).join("")}</table><p class="mut">Ключевое правило: знание из шага «Исследую» обязательно используется в шаге «Конструирую».</p></div>
+    <div class="card"><h3>📊 Рубрика оценивания</h3><div class="rubw"><table class="rub"><tr><th>Критерий</th><th>Начинаю (1)</th><th>Умею с помощью (2)</th><th>Умею сам (3)</th></tr>${D.rubric.map(r => `<tr>${r.map((c, j) => j ? `<td>${esc(c)}</td>` : `<th>${esc(c)}</th>`).join("")}</tr>`).join("")}</table></div><p class="mut">Оценивается смелость идеи и умение её объяснить, а не идеальность склейки.</p></div>
   </div><div class="col">
     <div class="card"><h3>⭐ Оценивание</h3><p>На каждой станции команда получает до 3 звёзд по критериям (кнопки ★ на странице станции). Максимум — 15 ⭐. Звёзды гостей в галерее — отдельный приз «Выбор зрителей».</p></div>
     <div class="card"><h3>🧰 Общий список материалов</h3><ul class="mat">${allMat.map(m => `<li>${esc(m)}</li>`).join("")}</ul></div>
     <div class="card"><h3>🚦 Рефлексия учеников</h3><div id="reflBox"></div><p class="mut">Ученики нажимают на телефоне на главной странице.</p></div>
     <div class="card"><h3>🖨️ Для лаборатории</h3><p>Карточки станций на столы: цель, материалы, шаги, безопасность и QR станции.</p><button class="btn wide" id="printSt">🖨️ Распечатать карточки станций (A4)</button></div>
+    <div class="card"><h3>📦 Коробка «Почему?»</h3><div class="wlist" id="whyList"></div></div>
+    <div class="card"><h3>✍️ Автор идеи</h3><p>${esc(D.author)}</p></div>
     <div class="card"><h3>🧹 Новый урок</h3><button class="btn red" id="resetAll">Очистить звёзды, рекорды и голоса</button><p class="mut">Облако: ${CL.ok ? "подключено ✅" : "не подключено — данные только на этом компьютере"}</p></div>
   </div></div>`;
-  drawRefl();
+  drawRefl(); drawWhy();
   $("#printSt").onclick = () => { $("#printArea").className = "pst"; $("#printArea").innerHTML = D.stations.map((s, i) => `<div class="stc" style="--c:${s.c};--s:${s.soft}">
     <div class="stch"><span>${s.i}</span><div><small>Станция ${i + 1}</small><h2>${esc(s.title)}</h2><p>❓ ${esc(s.q)}</p></div><div class="stq">${qrSvg(stuUrl() + "#st/" + s.id, { c1: s.c, c2: "#14213D", eye: s.c, logo: s.i })}</div></div>
     <p class="g">🎯 ${esc(s.goal)}</p><h3>🧰 Материалы</h3><ul>${s.mat.map(m => `<li>${esc(m)}</li>`).join("")}</ul>
     <h3>👣 Шаги</h3><ol>${s.steps.map(t => `<li>${esc(t)}</li>`).join("")}</ol><p class="sf">⚠️ ${esc(s.safe)}</p><p class="ch">🏆 ${esc(s.chal)}</p>
     <div class="cr">⭐ ${s.stars.map(esc).join(" · ⭐ ")}</div></div>`).join(""); window.print(); };
-  $("#resetAll").onclick = () => { if (!confirm("Очистить все результаты?")) return; ["stars", "bridge", "proj"].forEach(k => LS.set(k, {})); CLOUD = { stars: {}, bridge: {}, votes: {}, proj: {}, reflect: {} }; CL.del("").catch(() => {}); route(); };
+  $("#resetAll").onclick = () => { if (!confirm("Очистить все результаты?")) return; ["stars", "bridge", "proj", "pass"].forEach(k => LS.set(k, {})); CLOUD = { stars: {}, bridge: {}, votes: {}, proj: {}, reflect: {}, why: {}, pass: {} }; CL.del("").catch(() => {}); route(); };
 }
 function drawRefl() { const b = $("#reflBox"); if (!b) return; const c = [0, 0, 0]; Object.values(CLOUD.reflect || {}).forEach(r => c[r.r] = (c[r.r] || 0) + 1);
   b.innerHTML = D.reflect.map((r, i) => `<div class="brow"><span>${r}</span><div class="bar"><i style="width:${c[i] / Math.max(1, ...c) * 100}%;background:${["#2DAA4A", "#F2A900", "#E5322D"][i]}"></i></div><b>${c[i]}</b></div>`).join(""); }
@@ -314,8 +339,8 @@ async function visit() {
   app.innerHTML = `<main class="visit" style="--c:${tm.c}"><div class="vh"><span>${tm.i}</span><small>Галерея изобретателей · команда</small><h1>${esc(tm.n)}</h1></div><div class="card" id="vp"><p class="mut">Загрузка…</p></div>
     <div class="card"><h3>Поставь звёзды изобретателям!</h3><div class="vs">${[1, 2, 3].map(n => `<button data-n="${n}">${"⭐".repeat(n)}</button>`).join("")}</div><p class="mut" id="vMsg"></p></div>
     <p class="mut center">💡 ${esc(D.title)} · STEM-занятие</p></main>`;
-  try { CLOUD.proj = (await CL.get("proj")) || {}; } catch {}
-  const p = projOf(t); $("#vp").innerHTML = `<h2>${esc(p.title || "Наше изобретение")}</h2><p>${esc(p.text || "Спросите авторов — они с радостью расскажут!")}</p>`;
+  try { CLOUD.proj = (await CL.get("proj")) || {}; CLOUD.pass = (await CL.get("pass")) || {}; } catch {}
+  const p = projOf(t), ps = passHtml(passOf(t)); $("#vp").innerHTML = `<h2>${esc(p.title || "Наше изобретение")}</h2>${ps ? `<p class="mut">📘 Паспорт изобретения</p><div class="ppw">${ps}</div>` : `<p>${esc(p.text || "Спросите авторов — они с радостью расскажут!")}</p>`}`;
   const voted = LS.get("voted_" + t, 0); if (voted) $("#vMsg").textContent = `Спасибо! Вы поставили ${"⭐".repeat(voted)}`;
   $$(".vs button").forEach(b => b.onclick = async () => { if (LS.get("voted_" + t, 0)) return; const n = +b.dataset.n;
     try { await CL.post(`votes/${t}`, { s: n, ts: Date.now() }); LS.set("voted_" + t, n); $("#vMsg").textContent = `Спасибо! Вы поставили ${"⭐".repeat(n)}`; beep(1); } catch { $("#vMsg").textContent = "Нет интернета — попробуйте ещё раз."; } });

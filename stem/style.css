@@ -140,3 +140,18 @@ main{max-width:1500px;margin:0 auto;padding:22px}
 @keyframes popin{0%{opacity:0;transform:translateY(-14px) scale(.92)}60%{opacity:1;transform:translateY(2px) scale(1.03)}100%{transform:none}}
 .ill .wave{animation:wv 1.2s ease-in-out infinite alternate}@keyframes wv{to{transform:translateY(-6px)}}
 .steps li.now{background:var(--s);box-shadow:0 0 0 3px var(--c) inset}
+
+/* модель пяти шагов */
+.model,.why{margin-top:22px;background:#fff;border-radius:24px;padding:18px 24px;box-shadow:0 6px 0 #F2E6CF}.model h2,.why h2{margin:0 0 12px}
+.msteps{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.ms{border-radius:18px;padding:12px;background:#FBF6EC;position:relative}
+.ms:nth-child(1){background:#FFF1E2}.ms:nth-child(2){background:#E6F0FF}.ms:nth-child(3){background:#E3F7F0}.ms:nth-child(4){background:#F3EAFF}.ms:nth-child(5){background:#FFE8F4}
+.ms .mi{font-size:34px}.ms b{display:block;font-size:18px}.ms small{font-weight:900;color:#E0459B}.ms p{margin:4px 0 0;font-size:14px;color:var(--mut)}
+.mstrip{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:-8px 0 18px}.mstrip a{display:flex;align-items:center;gap:6px;background:#fff;border:2px solid var(--c);border-radius:30px;padding:5px 12px;font-weight:800;font-size:15px}
+.mstrip a:hover{background:var(--s)}.mstrip i{font-style:normal;color:var(--c);font-weight:900}
+.card.flash{animation:fl2 1.2s}@keyframes fl2{30%{box-shadow:0 0 0 5px var(--c)}}
+.wform{display:flex;gap:8px;flex-wrap:wrap}.wform input{flex:1;min-width:200px;border:3px solid #EADFCB;border-radius:14px;padding:10px 12px;font:inherit}
+.wlist{display:flex;flex-wrap:wrap;gap:8px}.wq{background:#fff;border:2px solid var(--c);border-radius:16px;padding:6px 12px;font-weight:700}
+.pf{display:block;margin:8px 0}.pf b{display:block;margin-bottom:3px}.pf input,.pf textarea{width:100%;border:2px solid #EADFCB;border-radius:12px;padding:8px 10px;font:inherit;font-size:15px}
+.ppw{text-align:left;display:grid;gap:8px}.pp{background:#FBF6EC;border-radius:12px;padding:8px 12px}.pp b{color:#E0459B}.pp p{margin:2px 0 0}
+.rubw{overflow:auto}.rub{border-collapse:collapse;font-size:14px;width:100%}.rub th,.rub td{border:1px solid #EFE4CD;padding:6px;vertical-align:top;text-align:left}.rub tr:first-child th{background:#FFF1CC}
+@media (max-width:1100px){.msteps{grid-template-columns:repeat(2,1fr)}}
